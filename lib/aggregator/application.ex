@@ -14,6 +14,7 @@ defmodule Aggregator.Application do
         plug: Aggregator.Endpoint,
         options: [port: 4000]
       ),
+      {Task.Supervisor, name: Task.FetchSupervisor},
       Aggregator.Stories
     ]
 
