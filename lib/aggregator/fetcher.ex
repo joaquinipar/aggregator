@@ -19,6 +19,11 @@ defmodule Aggregator.Fetcher do
     end
   end
 
+  def get_story(id) do
+    "#{get_api_url()}item/#{id}.json"
+    |> HTTPoison.get
+  end
+
   defp get_stories do
     get_api_url() <> "topstories.json"
     |> HTTPoison.get
