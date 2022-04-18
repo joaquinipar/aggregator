@@ -10,6 +10,7 @@ defmodule Aggregator.Stories do
   use GenServer
 
   alias Aggregator.Fetcher
+  alias Aggregator.Story
 
   defmodule State do
     defstruct stories: [], stories_content: [], refresh_interval: :timer.seconds(10), ids_ref: nil, content_ref: nil
@@ -30,6 +31,13 @@ defmodule Aggregator.Stories do
   end
 
   @doc """
+  Gets the story with the associated id.
+  """
+  def get_story(id) when is_integer(id) do
+    GenServer.call @name, {:get_story, id}
+  end
+
+  @doc """
   Changes the refresh interval after the next refresh.
   """
   def set_refresh_interval(miliseconds) do
@@ -44,6 +52,9 @@ defmodule Aggregator.Stories do
   def init( %State{} = state) do
     stories_ids = Fetcher.get_50_best_stories()
     stories_content = get_content_from_ids(stories_ids)
+    if Enum.empty?(stories_content), do:
+        Logger.error("Failed to get stories - The stories weren't refreshed")
+
     schedule_refresh(state.refresh_interval)
     {:ok, %State{stories: stories_ids, stories_content: stories_content}}
   end
@@ -63,10 +74,17 @@ defmodule Aggregator.Stories do
   end
 
   @doc """
-  Sets a new refresh inteval.
+  {:set_refresh_interval, miliseconds} -> Sets a new refresh inteval.
+  {:get_story, id} -> Gets story from state. If there's not present there, it fetches it from the API.
   """
-  def handle_call({:set_refresh_interval, miliseconds}, state) do
+  def handle_call({:set_refresh_interval, miliseconds}, _from, state) do
     {:reply, :ok, %State{ state | refresh_interval: miliseconds}}
+  end
+
+  def handle_call({:get_story, id}, _from, %State{} = state) do
+    found_elem = is_present?(id, state)
+
+    {:reply, get_story_or_fetch(id, found_elem), state}
   end
 
   @doc """
@@ -104,6 +122,16 @@ defmodule Aggregator.Stories do
     {:noreply, %State{state | content_ref: multitask.ref}}
   end
 
+  def handle_info({ref, {[], []}}, %State{content_ref: ref} = state) do
+    # Getting rid of the DOWN message
+    Process.demonitor(ref, [:flush])
+
+    Logger.error("Failed to get stories - The stories weren't refreshed")
+
+    # Saving both the stories_id and stories_content at the same moment to avoid having inconsistent state for short periods of time
+    {:noreply, state}
+  end
+
   def handle_info({ref, {stories_ids, stories_content}}, %State{content_ref: ref} = state) do
     # Getting rid of the DOWN message
     Process.demonitor(ref, [:flush])
@@ -119,5 +147,25 @@ defmodule Aggregator.Stories do
     |> Enum.map(fn {:ok, res} -> res.body end)
     |> Enum.map(fn body_json -> String.replace(body_json, "\n", " ") end) # workaround fail encode when string has '\n'
     |> Enum.map(&Poison.decode!/1)
+  end
+
+  @spec is_present?(integer, %State{}) :: Map | nil
+  defp is_present?(id, %State{} = state) do
+    state.stories_content
+    |> Enum.find(fn story -> story["id"] === id end)
+  end
+
+  def get_story_or_fetch(_id, story) when not is_nil(story), do: {:ok, story}
+
+  def get_story_or_fetch(id, _story) do
+    case Fetcher.get_story(id) do
+      {:ok, %HTTPoison.Response{body: story_json}} when story_json != "null" ->
+        {:ok, Poison.decode!(story_json, as: %Story{})}
+      {:ok, %HTTPoison.Response{}} ->
+        {:error, "Couldn't find story #{id}"}
+      {:error, reason} ->
+        {:error, reason}
+    end
+
   end
 end
