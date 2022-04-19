@@ -12,7 +12,11 @@ defmodule Aggregator.Application do
       Plug.Cowboy.child_spec(
         scheme: :http,
         plug: Aggregator.Endpoint,
-        options: [port: 4000]
+        options: [dispatch: dispatch(), port: 4000]
+      ),
+      Registry.child_spec(
+        keys: :duplicate,
+        name: Registry.Aggregator
       ),
       {Task.Supervisor, name: Task.FetchSupervisor},
       Aggregator.Stories
@@ -22,5 +26,16 @@ defmodule Aggregator.Application do
     # for other strategies and supported options
     opts = [strategy: :one_for_one, name: Aggregator.Supervisor]
     Supervisor.start_link(children, opts)
+  end
+
+  defp dispatch do
+    [
+      {:_,
+        [
+          {"/ws/[...]", Aggregator.WebSocketHandler, []},
+          {:_, Plug.Cowboy.Handler, {Aggregator.Endpoint, []}}
+        ]
+      }
+    ]
   end
 end
