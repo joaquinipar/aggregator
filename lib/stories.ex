@@ -146,13 +146,13 @@ defmodule Aggregator.Stories do
     |> Enum.map(&Task.await(&1))
     |> Enum.map(fn {:ok, res} -> res.body end)
     |> Enum.map(fn body_json -> String.replace(body_json, "\n", " ") end) # workaround fail encode when string has '\n'
-    |> Enum.map(&Poison.decode!/1)
+    |> Enum.map(fn story -> Poison.decode!(story, as: %Story{}) end)
   end
 
   @spec is_present?(integer, %State{}) :: Map | nil
   defp is_present?(id, %State{} = state) do
     state.stories_content
-    |> Enum.find(fn story -> story["id"] === id end)
+    |> Enum.find(fn story -> story.id === id end)
   end
 
   def get_story_or_fetch(_id, story) when not is_nil(story), do: {:ok, story}
