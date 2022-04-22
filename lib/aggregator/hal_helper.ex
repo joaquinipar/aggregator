@@ -36,11 +36,13 @@ defmodule Aggregator.HalHelper do
     |> Document.add_property(:error, reason)
   end
 
+  @spec format_page_json(Scrivener.Page.t(), Plug.Conn.t()) :: binary
   def format_page_json(%Scrivener.Page{} = page, conn) do
     format_page(page, conn)
     |> Poison.encode!
   end
 
+  @spec add_prev(Document.t(), binary(), Scrivener.Page.t()) :: Document.t()
   defp add_prev(%Document{} = document, _url, %Scrivener.Page{page_number: 1}) do
     document
   end
@@ -50,6 +52,7 @@ defmodule Aggregator.HalHelper do
     |> Document.add_link(%Link{rel: "prev", href: "#{url}?page=#{page_number - 1}", title: "prev"})
   end
 
+  @spec add_next(Document.t(), binary(), Scrivener.Page.t()) :: Document.t()
   defp add_next(%Document{} = document, _url, %Scrivener.Page{page_number: total, total_pages: total}) do
     document
   end

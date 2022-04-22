@@ -11,14 +11,7 @@ defmodule Aggregator.Stories do
 
   alias Aggregator.Fetcher
   alias Aggregator.Story
-
-  defmodule State do
-    defstruct stories: [],
-              stories_content: [],
-              refresh_interval: :timer.seconds(10),
-              ids_ref: nil,
-              content_ref: nil
-  end
+  alias Aggregator.State
 
   # Client Interface
 
@@ -71,17 +64,15 @@ defmodule Aggregator.Stories do
     Process.send_after(self(), :refresh, interval)
   end
 
-  @doc """
-  Gets the top 50 stories from the state.
+    @doc """
+  :get_stories -> Gets the top 50 stories from the state.
+  {:set_refresh_interval, miliseconds} -> Sets a new refresh inteval.
+  {:get_story, id} -> Gets story from state. If there's not present there, it fetches it from the API.
   """
   def handle_call(:get_stories, _from, %State{} = state) do
     {:reply, state.stories_content, state}
   end
 
-  @doc """
-  {:set_refresh_interval, miliseconds} -> Sets a new refresh inteval.
-  {:get_story, id} -> Gets story from state. If there's not present there, it fetches it from the API.
-  """
   def handle_call({:set_refresh_interval, miliseconds}, _from, state) do
     {:reply, :ok, %State{state | refresh_interval: miliseconds}}
   end
@@ -151,6 +142,7 @@ defmodule Aggregator.Stories do
     {:noreply, %State{state | stories: stories_ids, stories_content: stories_content}}
   end
 
+  @spec get_content_from_ids(list(integer())) :: list(binary())
   defp get_content_from_ids(top_stories) do
     top_stories
     |> Enum.map(&Task.async(fn -> Fetcher.get_story(&1) end))
@@ -161,7 +153,7 @@ defmodule Aggregator.Stories do
     |> Enum.map(fn story -> Poison.decode!(story, as: %Story{}) end)
   end
 
-  @spec is_present?(integer, %State{}) :: Map | nil
+  @spec is_present?(integer, State.t()) :: map() | nil
   defp is_present?(id, %State{} = state) do
     state.stories_content
     |> Enum.find(fn story -> story.id === id end)
