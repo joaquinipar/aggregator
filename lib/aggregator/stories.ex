@@ -9,7 +9,7 @@ defmodule Aggregator.Stories do
 
   use GenServer
 
-  alias Aggregator.Fetcher
+  alias Aggregator.HackerNews.Fetcher
   alias Aggregator.Story
   alias Aggregator.State
 
@@ -46,6 +46,7 @@ defmodule Aggregator.Stories do
   @doc """
   Saves the initial state and schedules a refresh to update the state after the default interval passed.
   """
+  @impl true
   def init(%State{} = state) do
     stories_ids = Fetcher.get_50_best_stories()
     stories_content = get_content_from_ids(stories_ids)
@@ -69,6 +70,7 @@ defmodule Aggregator.Stories do
   {:set_refresh_interval, miliseconds} -> Sets a new refresh inteval.
   {:get_story, id} -> Gets story from state. If there's not present there, it fetches it from the API.
   """
+  @impl true
   def handle_call(:get_stories, _from, %State{} = state) do
     {:reply, state.stories_content, state}
   end
@@ -90,6 +92,7 @@ defmodule Aggregator.Stories do
   {ref, {stories_ids, stories_content}} -> Receives both the stories id list and the content list and finally
   saves into the state.
   """
+  @impl true
   def handle_info(:refresh, %State{} = state) do
     Logger.info("Refreshing stories...")
 
@@ -136,7 +139,7 @@ defmodule Aggregator.Stories do
     Process.demonitor(ref, [:flush])
     Logger.info("Stories were refreshed successfully!")
 
-    Aggregator.WebSocketHandler.send_to_ws_suscribers(stories_content)
+    Aggregator.HackerNewsWeb.WebSocketHandler.send_to_ws_suscribers(stories_content)
 
     # Saving both the stories_id and stories_content at the same moment to avoid having inconsistent state for short periods of time
     {:noreply, %State{state | stories: stories_ids, stories_content: stories_content}}

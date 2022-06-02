@@ -1,9 +1,11 @@
-defmodule Aggregator.Fetcher do
+defmodule Aggregator.HackerNews.Fetcher do
 
-  # Aggregator.Fetcher.get_50_best_stories()
+  # Aggregator.HackerNews.Fetcher.get_50_best_stories()
+  @behaviour Aggregator.HackerNews.API
 
   require Logger
 
+  @impl true
   def get_50_best_stories do
     case get_stories() do
       {:ok, %HTTPoison.Response{body: stories_string}} when is_binary(stories_string) ->
@@ -19,6 +21,7 @@ defmodule Aggregator.Fetcher do
     end
   end
 
+  @impl true
   def get_story(id) do
     "#{get_api_url()}item/#{id}.json"
     |> HTTPoison.get

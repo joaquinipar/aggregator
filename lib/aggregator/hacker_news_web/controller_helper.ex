@@ -1,8 +1,8 @@
-defmodule Aggregator.EndpointHelper do
+defmodule Aggregator.HackerNewsWeb.ControllerHelper do
 
   use Scrivener
 
-  alias Aggregator.HalHelper
+  alias Aggregator.HackerNewsWeb.HalHelper
 
   @spec get_full_url(Plug.Conn.t()) :: binary()
   def get_full_url(%Plug.Conn{} = conn) do

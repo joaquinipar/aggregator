@@ -1,11 +1,11 @@
-defmodule Aggregator.HalHelper do
+defmodule Aggregator.HackerNewsWeb.HalHelper do
 
   alias HAL.{Document, Link, Embed}
-  alias Aggregator.EndpointHelper
+  alias Aggregator.HackerNewsWeb.ControllerHelper
 
   def format_page(%Scrivener.Page{} = page, %Plug.Conn{} = conn) do
-    base_url = EndpointHelper.get_url(conn)
-    url = EndpointHelper.get_full_url(conn)
+    base_url = ControllerHelper.get_url(conn)
+    url = ControllerHelper.get_full_url(conn)
 
     %Document{}
     |> Document.add_link(%Link{rel: "self", href: url, title: "self"})
@@ -21,7 +21,7 @@ defmodule Aggregator.HalHelper do
   end
 
   def format_single_page(%Aggregator.Story{} = story, %Plug.Conn{} = conn) do
-    url = EndpointHelper.get_full_url(conn)
+    url = ControllerHelper.get_full_url(conn)
 
     %Document{}
     |> Document.add_link(%Link{rel: "self", href: url, title: "self"})
@@ -29,7 +29,7 @@ defmodule Aggregator.HalHelper do
   end
 
   def format_single_page_error(reason, %Plug.Conn{} = conn) do
-    url = EndpointHelper.get_full_url(conn)
+    url = ControllerHelper.get_full_url(conn)
     IO.puts "reason #{reason}"
     %Document{}
     |> Document.add_link(%Link{rel: "self", href: url, title: "self"})

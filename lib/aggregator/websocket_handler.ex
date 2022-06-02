@@ -1,4 +1,4 @@
-defmodule Aggregator.WebSocketHandler do
+defmodule Aggregator.HackerNewsWeb.WebSocketHandler do
   @behaviour :cowboy_websocket
 
   require Logger

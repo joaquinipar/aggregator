@@ -11,7 +11,7 @@ defmodule Aggregator.Application do
       # {Aggregator.Worker, arg}
       Plug.Cowboy.child_spec(
         scheme: :http,
-        plug: Aggregator.Endpoint,
+        plug: Aggregator.HackerNewsWeb.Router,
         options: [dispatch: dispatch(), port: 4000]
       ),
       Registry.child_spec(
@@ -32,8 +32,8 @@ defmodule Aggregator.Application do
     [
       {:_,
         [
-          {"/ws/[...]", Aggregator.WebSocketHandler, []},
-          {:_, Plug.Cowboy.Handler, {Aggregator.Endpoint, []}}
+          {"/ws/[...]", Aggregator.HackerNewsWeb.WebSocketHandler, []},
+          {:_, Plug.Cowboy.Handler, {Aggregator.HackerNewsWeb.Router, []}}
         ]
       }
     ]

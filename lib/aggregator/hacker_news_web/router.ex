@@ -1,4 +1,4 @@
-defmodule Aggregator.Endpoint do
+defmodule Aggregator.HackerNewsWeb.Router do
   @moduledoc """
   """
 
@@ -7,7 +7,7 @@ defmodule Aggregator.Endpoint do
   use Plug.Router
 
   alias Aggregator.Stories
-  alias Aggregator.EndpointLogic
+  alias Aggregator.HackerNewsWeb.Controller
 
   plug(Plug.Logger)
   plug(:match)
@@ -22,7 +22,7 @@ defmodule Aggregator.Endpoint do
 
     {code, stories_resp} =
       Stories.get_stories()
-      |> EndpointLogic.get_top_stories_response(conn)
+      |> Controller.get_top_stories_response(conn)
 
     conn
     |> put_resp_content_type("application/json")
@@ -39,7 +39,7 @@ defmodule Aggregator.Endpoint do
     {code, content} =
       story_id
       |> Stories.get_story
-      |> EndpointLogic.get_story_response(conn)
+      |> Controller.get_story_response(conn)
 
       send_resp(res, code, content)
   end
